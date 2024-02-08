@@ -8,6 +8,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 import { requestsCollection, btcKeyPairsCollection } from './mongoConfig.js'
 import { checkDeposit, main } from './controller.js';
+import { generateBittensorAddress } from './bittensor.js'
 import cron from 'node-cron';
 
 cron.schedule('* * * * *', () => {
@@ -102,13 +103,12 @@ const hasPendingRequest = async function (address, ticker) {
 }
 
 const generateAddress = async function () {
-  const receivingAddress = generateAddress();
+  const { receivingAddress } = generateBittensorAddress();
   console.log({ receivingAddress })
   // console.log(receivingAddress)
-  await btcKeyPairsCollection.insertOne({
-    privateKey: newPair.privateKey,
-    address: receivingAddress
-  });
+  // await btcKeyPairsCollection.insertOne({
+  //   address: receivingAddress
+  // });
   return receivingAddress
 }
 
