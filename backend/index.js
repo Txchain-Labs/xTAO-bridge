@@ -34,7 +34,7 @@ app.use(session({
 }));
 
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://24.199.116.139:3000'],
+  origin: ['http://localhost:3001', 'http://24.199.116.139:3001'],
   credentials: true,
   exposedHeaders: ['set-cookie']
 }))
@@ -97,13 +97,13 @@ const getReceiverAddress = async function (address) {
   else return false;
 }
 
-const hasPendingRequest = async function (address, ticker) {
-  let result = await requestsCollection.find({ $and: [{ type: 0 }, { completed: false }, { ethAddress: address }, { ticker: ticker }] }).limit(1).toArray();
+const hasPendingRequest = async function (address) {
+  let result = await requestsCollection.find({ $and: [{ type: 0 }, { completed: false }, { ethAddress: address }] }).limit(1).toArray();
   return result.length > 0
 }
 
 const generateAddress = async function () {
-  const { receivingAddress } = generateBittensorAddress();
+  const { receivingAddress } = await generateBittensorAddress();
   console.log({ receivingAddress })
   // console.log(receivingAddress)
   // await btcKeyPairsCollection.insertOne({
@@ -137,7 +137,7 @@ app.post('/request_brc_to_erc', async function (req, res) {
     return;
   }
   let toAddress = await getReceiverAddress(req.session.siwe.address);
-  const hasPending = await hasPendingRequest(req.session.siwe.address, req.body.ticker);
+  const hasPending = await hasPendingRequest(req.session.siwe.address);
   if (hasPending) {
     req.session.save(() => res.status(500).json({ toAddress }));
     return;
@@ -154,7 +154,6 @@ app.post('/request_brc_to_erc', async function (req, res) {
     inscribing: false,
     btcAddress: toAddress,
     ethAddress: req.session.siwe.address,
-    ticker: req.body.ticker,
     amount: req.body.amount,
   });
   res.status(200).json({ toAddress })

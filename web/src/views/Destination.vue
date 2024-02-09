@@ -11,8 +11,7 @@
     <WalletConnect class="my-4" :targetNetwork="destinationNetwork" :targetNetworkId="destinationNetworkId"
       :currency="'ETH'" :decimals="18" :isNewNetwork="true" />
 
-    <input type="text" name="btcaddress" style="margin-top: 20px;" v-if="walletStore.btcReceivingAddress != ''"
-      v-model="btcAddress"
+    <input type="text" name="btcaddress" style="margin-top: 20px;" v-model="btcAddress"
       class="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-7 pr-12 sm:text-sm border-gray-300 rounded-md"
       placeholder="bc1..." aria-describedby="price-currency" />
     <form class="w-96 mt-8 mx-auto">

@@ -4,7 +4,7 @@ import sys
 print ("Number of arguments:", len(sys.argv), "arguments")
 
 toAddress = sys.argv[1]
-amount = int(sys.argv[2])
+amount = float(sys.argv[2])
 
 config1 = bittensor.subtensor.config()
 config1.subtensor.network = "local"

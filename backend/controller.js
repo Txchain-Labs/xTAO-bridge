@@ -88,11 +88,15 @@ const handleMintedEvent = async (
 
   console.log('Tokens minted')
 
-  let query = { $and: [{ completed: false }, { deposited: true }, { ethAddress: to }, { token: contractDest.options.address }] };
+  let query = { $and: [{ completed: false }, { deposited: true }, { ethAddress: to }] };
   let result = await requestsCollection.find(query).limit(1)
     .toArray();
-  if (!result) return;
-  await requestsCollection.updateOne(result[0], { $set: { completed: true } })
+  if (result.length == 0) return;
+  try {
+    await requestsCollection.updateOne(result[0], { $set: { completed: true } })
+  } catch (e) {
+    console.log(e)
+  }
 }
 
 const handleDestinationEvent = async (
@@ -139,16 +143,16 @@ const handleDestinationEvent = async (
       //   from
       // )
 
-      let query = { $and: [{ completed: false }, { burnt: false }, { ethAddress: from }, { token: contractDest.options.address }] };
+      let query = { $and: [{ completed: false }, { burnt: false }, { ethAddress: from }] };
       let result = await requestsCollection.find(query).limit(1)
         .toArray();
-      if (!result) {
+      if (result.length == 0) {
         console.log("NO DB RECORD??")
         return;
       }
       await requestsCollection.updateOne(result[0], { $set: { burnt: true } });
 
-      const orderId = await sendBrc(result[0].btcAddress, value)
+      const orderId = await sendBrc(result[0].btcAddress, ethers.formatEther(value))
       if (!orderId) return;
       console.log("mongo record id:", result[0]._id)
       await requestsCollection.updateOne(result[0], { $set: { inscribing: true, orderId } });
