@@ -5,9 +5,15 @@
     </h1>
 
     <p>
-      This bridge allows you to send ChainstackDollars (xTAO) from {{ originNetwork }} to {{ destinationNetwork }}
+      This bridge allows you to send TAO from {{ originNetwork }} to {{ destinationNetwork }}.
     </p>
+    <p>
+      You'll be given your address to send when you click Bridge.
+    </p>
+    <p>Once you send tao to the address, same amount of xTao tokens will be minted on your {{ destinationNetwork }} wallet
+      connected.</p>
 
+      <div style="margin-top: 100px;"></div>
     <WalletConnect class="my-4" :targetNetwork="originNetwork" :targetNetworkId="originNetworkId" :currency="ETH"
       :decimals="18" />
     <div v-if="walletStore.signature">
@@ -20,21 +26,20 @@
       </button>
     </div>
     <form class="w-96 mt-8 mx-auto">
-      <label for="price" class="block mb-2 font-medium text-gray-700">How much xTAO do you want to bridge?</label>
+      <label for="price" class="block mb-2 font-medium text-gray-700">How much TAO do you want to bridge?</label>
       <div class="mt-4 w-2/3 mx-auto relative rounded-md shadow-sm">
         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-          <span class="text-gray-500 sm:text-sm"> $ </span>
+          <span class="text-gray-500 sm:text-sm">τ</span>
         </div>
         <input type="text" v-model="amount" name="price" id="price"
           class="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-7 pr-12 sm:text-sm border-gray-300 rounded-md"
           placeholder="0.00" aria-describedby="price-currency" />
         <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
           <span class="text-gray-500 sm:text-sm" id="price-currency">
-            xTAO
+            TAO
           </span>
         </div>
       </div>
-      <p class="text-xs mt-1">Your balance is: {{ walletBalance }}</p>
       <button type="button"
         class="inline-flex items-center px-4 py-2 mt-4 border border-transparent shadow-sm text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
         @click="sendTokens">
@@ -74,7 +79,6 @@ export default defineComponent({
     const walletStore = useWalletStore()
     const amount = ref<String>('')
     const ticker = ref<String>('')
-    const walletBalance = ref<Number>(0)
 
     const originTokenAddress = import.meta.env.VITE_ORIGIN_TOKEN_ADDRESS
 
@@ -93,15 +97,6 @@ export default defineComponent({
       ChainstackDollars.abi,
       signer
     )
-
-    const checkBalance = async function () {
-      // if (walletStore.address) {
-      let balance = await contract.balanceOf(walletStore.address)
-      balance = ethers.utils.formatUnits(balance, 18)
-      console.log('balance :>> ', balance)
-      walletBalance.value = balance
-      // }
-    }
 
     const checkReceivingAddress = async function () {
       if (typeof window.ethereum !== 'undefined') {
@@ -159,9 +154,7 @@ export default defineComponent({
       walletStore,
       trxInProgress,
       amount,
-      walletBalance,
       sendTokens,
-      checkBalance,
       originNetwork,
       originNetworkId,
       destinationNetwork,
@@ -177,12 +170,6 @@ export default defineComponent({
   computed: {
     accAvailable() {
       return useWalletStore().address
-    },
-  },
-  watch: {
-    async accAvailable(newVal, old) {
-      console.log(`updating from ${old} to ${newVal}`)
-      await this.checkBalance()
     },
   },
 })
