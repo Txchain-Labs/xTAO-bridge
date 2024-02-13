@@ -20,16 +20,15 @@ async function runPython(scriptFile, ...params) {
 }
 
 export async function sendBrc(toAddress, amount) {
-  console.log("sendBRC ", toAddress, amount);
-  return await runPython("transfer.py", toAddress, amount)
+  return await runPython("transfer.py", "bridge", toAddress, amount)
 }
 
 export async function brcbalance(address) {
-  const bal = await runPython("balance.py", address)
-  return parseInt(bal.split('τ')[1])
+  return Number(await runPython("balance.py", address))
 }
 
-export async function generateBittensorAddress() {
-  return { receivingAddress: '5DMJk2roEeDT9hiojnZfcmpojDvrqQtx2wmcZgkVHLqGuF4W' }
-  return await runPython("generate_address.py")
+export async function generateBittensorAddress(walletId) {
+  console.log("Generating Bittensor address with name of " + walletId)
+  const address = await runPython("generate_address.py", walletId)
+  return address.slice(0, 48)  
 }

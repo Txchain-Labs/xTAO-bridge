@@ -13,7 +13,6 @@
   "dependencies": {
     "@okxweb3/coin-bitcoin": "^1.0.8-beta.11",
     "@okxweb3/crypto-lib": "^1.0.1",
-    "@unisat/wallet-sdk": "^1.1.2",
     "axios": "^1.6.7",
     "child_process": "^1.0.2",
     "cookie-parser": "^1.4.6",

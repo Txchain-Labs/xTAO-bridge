@@ -7,13 +7,14 @@ import { core, address, utils } from '@unisat/wallet-sdk';
 import dotenv from 'dotenv';
 dotenv.config();
 import { requestsCollection, btcKeyPairsCollection } from './mongoConfig.js'
-import { checkDeposit, main } from './controller.js';
+import { checkDeposit, checkJunks, main } from './controller.js';
 import { generateBittensorAddress } from './bittensor.js'
 import cron from 'node-cron';
 
 cron.schedule('* * * * *', () => {
   console.log("======= CRON ========")
   checkDeposit();
+  checkJunks();
 });
 
 main();
@@ -55,8 +56,6 @@ app.post('/verify', async function (req, res) {
     let SIWEObject = new SiweMessage(req.body.message);
     const { data: message } = await SIWEObject.verify({ signature: req.body.signature, nonce: req.session.nonce });
 
-    console.log({ nonce: req.session.nonce })
-
     req.session.siwe = message;
     // req.session.cookie.expires = new Date(message.expirationTime);
     req.session.save(() => res.status(200).send(true));
@@ -91,44 +90,21 @@ app.get('/personal_information', function (req, res) {
   res.send(`You are authenticated and your address is: ${req.session.siwe.address}`);
 });
 
-const getReceiverAddress = async function (address) {
-  let result = await requestsCollection.find({ $and: [{ type: 0 }, { completed: false }, { ethAddress: address }] }).limit(1).toArray();
-  if (result.length) return result[0].btcAddress;
-  else return false;
-}
-
-const hasPendingRequest = async function (address) {
-  let result = await requestsCollection.find({ $and: [{ type: 0 }, { completed: false }, { ethAddress: address }] }).limit(1).toArray();
-  return result.length > 0
-}
-
-const generateAddress = async function () {
-  const { receivingAddress } = await generateBittensorAddress();
-  console.log({ receivingAddress })
-  // console.log(receivingAddress)
-  // await btcKeyPairsCollection.insertOne({
-  //   address: receivingAddress
-  // });
-  return receivingAddress
-}
-
-async function brcTickerFromEthAddress(address) {
-  // TODO get from tokens collection in mongoDB
-  return 'euph';
+const getPendingRequest = async function (address) {
+  return await requestsCollection.findOne({ $and: [{ type: 0 }, { completed: false, ethAddress: address }] });
 }
 
 app.post('/receive_address', async function (req, res) {
-  console.log(req.session)
   if (!req.session.siwe) {
     res.status(401).json({ message: 'You have to first sign_in' });
     return;
   }
-  const address = await getReceiverAddress(req.session.siwe.address);
-  if (address) {
-    res.status(200).json({ address })
+  const request = await getPendingRequest(req.session.siwe.address);
+  if (request) {
+    res.status(200).json(request)
     return;
   }
-  res.status(500).json({ message: `Error you don't have pending requests` });
+  res.status(500).json({ message: `Please request first` });
 });
 
 app.post('/request_brc_to_erc', async function (req, res) {
@@ -136,27 +112,23 @@ app.post('/request_brc_to_erc', async function (req, res) {
     res.status(401).json({ message: 'You have to first sign_in' });
     return;
   }
-  let toAddress = await getReceiverAddress(req.session.siwe.address);
-  const hasPending = await hasPendingRequest(req.session.siwe.address);
-  if (hasPending) {
-    req.session.save(() => res.status(500).json({ toAddress }));
+  const pendingRequest = await getPendingRequest(req.session.siwe.address);
+  if (pendingRequest) {
+    res.status(500).json(pendingRequest);
     return;
   }
-  if (!toAddress) {
-    toAddress = await generateAddress()
-  }
   // Store request
-  await requestsCollection.insertOne({
+  const request = await requestsCollection.insertOne({
     type: 0,
     completed: false,
     deposited: false,
     burnt: false,
-    inscribing: false,
-    btcAddress: toAddress,
     ethAddress: req.session.siwe.address,
-    amount: req.body.amount,
+    amount: Number(req.body.amount),
   });
-  res.status(200).json({ toAddress })
+  const toAddress = await generateBittensorAddress(request.insertedId)
+  await requestsCollection.updateOne({ _id: request.insertedId }, { $set: { btcAddress: toAddress } });
+  res.status(200).json({ btcAddress: toAddress, amount: req.body.amount })
 })
 
 app.post('/request_erc_to_brc', async function (req, res) {
@@ -164,23 +136,13 @@ app.post('/request_erc_to_brc', async function (req, res) {
     res.status(401).json({ message: 'You have to first sign_in' });
     return;
   }
-
-  let result = await requestsCollection.find({ $and: [{ type: 1 }, { completed: false }, { ethAddress: req.session.siwe.address }, { token: req.body.tokenAddress }] }).limit(1).toArray();
-  const ticker = await brcTickerFromEthAddress(req.body.tokenAddress)
-  if (result.length) {
-    req.session.save(() => res.status(500).json({ message: `Error! You have pending bridge request for ${ticker}` }));
-    return;
-  }
   await requestsCollection.insertOne({
     type: 1,
     completed: false,
     deposited: false,
     burnt: false,
-    inscribing: false,
     btcAddress: req.body.btcAddress,
     ethAddress: req.session.siwe.address,
-    ticker: ticker,
-    token: req.body.tokenAddress,
   });
   res.status(200).json(true)
 })

@@ -14,6 +14,7 @@ export const useWalletStore = defineStore('wallet', {
       message: '',
       signature: '',
       btcReceivingAddress: '',
+      pendingAmount: 0,
     }
   },
 
@@ -31,8 +32,9 @@ export const useWalletStore = defineStore('wallet', {
       this.message = message
       this.signature = signature
     },
-    saveBtcAddress(address: string) {
+    savePendingRequestInfo(address: string, amount: number) {
       this.btcReceivingAddress = address
+      this.pendingAmount = amount
     },
   },
 })
