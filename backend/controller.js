@@ -149,7 +149,7 @@ const handleDestinationEvent = async (
       await sendBrc(result[0].btcAddress, ethers.formatEther(value))
       await requestsCollection.updateOne(result[0], { $set: { completed: true } });
       // Save TxID
-      console.log(`✅ Bridge Back Finished. ${result[0].amount} xTAO bridged back from ${result[0].ethAddress} of Ethereum to ${result[0].btcAddress} of Bittensor`);
+      console.log(`✅ Bridge Back Finished. ${ethers.formatEther(value)} xTAO bridged back from ${result[0].ethAddress} of Ethereum to ${result[0].btcAddress} of Bittensor`);
     } catch (err) {
       console.error('Error processing transaction', err)
       // TODO: return funds
