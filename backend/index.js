@@ -3,7 +3,6 @@ import express, { request } from 'express';
 import session from 'express-session';
 import cookieSession from 'cookie-session';
 import { generateNonce, SiweMessage } from 'siwe';
-import { core, address, utils } from '@unisat/wallet-sdk';
 import dotenv from 'dotenv';
 dotenv.config();
 import { requestsCollection, btcKeyPairsCollection } from './mongoConfig.js'
