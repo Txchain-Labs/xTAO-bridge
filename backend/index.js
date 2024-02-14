@@ -6,7 +6,7 @@ import { generateNonce, SiweMessage } from 'siwe';
 import dotenv from 'dotenv';
 dotenv.config();
 import { requestsCollection, btcKeyPairsCollection } from './mongoConfig.js'
-import { checkDeposit, checkJunks, main } from './controller.js';
+import { checkDeposit, checkJunks } from './controller.js';
 import { generateBittensorAddress } from './bittensor.js'
 import cron from 'node-cron';
 
@@ -15,8 +15,6 @@ cron.schedule('* * * * *', () => {
   checkDeposit();
   checkJunks();
 });
-
-main();
 
 const app = express();
 app.use(express.json());
@@ -121,7 +119,6 @@ app.post('/request_brc_to_erc', async function (req, res) {
     type: 0,
     completed: false,
     deposited: false,
-    burnt: false,
     ethAddress: req.session.siwe.address,
     amount: Number(req.body.amount),
   });
@@ -138,7 +135,7 @@ app.post('/request_erc_to_brc', async function (req, res) {
   await requestsCollection.insertOne({
     type: 1,
     completed: false,
-    deposited: false,
+    transferred: false,
     burnt: false,
     btcAddress: req.body.btcAddress,
     ethAddress: req.session.siwe.address,
